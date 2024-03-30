@@ -1,0 +1,103 @@
+[Unit]
+Description=Prometheus service
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+# All of these User/Group work for the "(ok)" ExecStart lines
+#User=prometheus
+#Group=root
+#User=wink
+#Group=users
+User=prometheus
+Group=users
+#User=prometheus
+#Group=prometheus
+
+Restart=on-failure
+WorkingDirectory=/usr/share/prometheus
+EnvironmentFile=-/etc/conf.d/prometheus
+
+# These succeed opening prometheus.yml
+#Mar 29 19:30:24 3900x systemd[1]: Started Prometheus service.
+#Mar 29 19:30:24 3900x prometheus[20827]: ts=2024-03-30T02:30:24.759Z caller=main.go:573 level=info msg="No time or size retention was set so using the default time retention" duration=15d
+#Mar 29 19:30:24 3900x prometheus[20827]: ts=2024-03-30T02:30:24.759Z caller=main.go:617 level=info msg="Starting Prometheus Server" mode=server version="(version=2.51.0, branch=tarball, revision=2.51.0)"
+#Mar 29 19:30:24 3900x prometheus[20827]: ts=2024-03-30T02:30:24.759Z caller=main.go:622 level=info build_context="(go=go1.22.1, platform=linux/amd64, user=someone@builder, date=20240319-15:33:48, tags=unknown)"
+#Mar 29 19:30:24 3900x prometheus[20827]: ts=2024-03-30T02:30:24.759Z caller=main.go:623 level=info host_details="(Linux 6.8.2-arch1-1 #1 SMP PREEMPT_DYNAMIC Wed, 27 Mar 2024 14:17:24 +0000 x86_64 3900x (none))"
+#
+# Here is strace when using:
+#    ExecStart=strace /usr/bin/prometheus --config.file=/x/prometheus.yml
+# And here the `openat` succeeds and we see the "No time or size retention ..." printed
+#Mar 29 20:10:10 3900x strace[21937]: uname({sysname="Linux", nodename="3900x", ...}) = 0
+#Mar 29 20:10:10 3900x strace[21937]: openat(AT_FDCWD, "/x/prometheus.yml", O_RDONLY|O_CLOEXEC) = 3
+#Mar 29 20:10:10 3900x strace[21937]: fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+#Mar 29 20:10:10 3900x strace[21937]: fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+#Mar 29 20:10:10 3900x strace[21937]: epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=2929721346, u64=9171479098157957122}}) = -1 EPERM (Operation not permitted)
+#Mar 29 20:10:10 3900x strace[21937]: fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+#Mar 29 20:10:10 3900x strace[21937]: fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+#Mar 29 20:10:10 3900x strace[21937]: fstat(3, {st_mode=S_IFREG|0644, st_size=289, ...}) = 0
+#Mar 29 20:10:10 3900x strace[21937]: read(3, "scrape_configs:\n  - job_name: re"..., 512) = 289
+#Mar 29 20:10:10 3900x strace[21937]: read(3, "", 223)                        = 0
+#Mar 29 20:10:10 3900x strace[21937]: close(3)                                = 0
+#Mar 29 20:10:10 3900x strace[21937]: write(2, "ts=2024-03-30T03:10:10.026Z call"..., 147
+#Mar 29 20:10:10 3900x strace[21944]: ts=2024-03-30T03:10:10.026Z caller=main.go:573 level=info msg="No time or size retention was set so using the default time retention" duration=15d
+#Mar 29 20:10:10 3900x strace[21937]: ) = 147
+
+#ExecStart=strace /usr/bin/prometheus --config.file=/x/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus.yml
+
+# The ExecStart below fail opening prometheus.yml
+#Mar 29 19:32:18 3900x systemd[1]: Started Prometheus service.
+#Mar 29 19:32:18 3900x prometheus[21037]: ts=2024-03-30T02:32:18.232Z caller=main.go:521 level=error msg="Error loading config (--config.file=/root/prometheus.yml)" file=/root/prometheus.yml err="open /root/prometheus.yml: permission denied"
+#Mar 29 19:32:18 3900x systemd[1]: prometheus.service: Main process exited, code=exited, status=2/INVALIDARGUMENT
+#Mar 29 19:32:18 3900x systemd[1]: prometheus.service: Failed with result 'exit-code'.
+#
+# And here is an strace using:
+#    ExecStart=strace /usr/bin/prometheus --config.file=/root/prometheus.yml
+#
+# And you can see it's a simple failure to open /root/prometheus.yml the first
+# one below, all of them probably fail exactly the same way
+#Mar 29 20:11:55 3900x strace[22134]: futex(0x608ec52da5a0, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+#Mar 29 20:11:55 3900x strace[22134]: uname({sysname="Linux", nodename="3900x", ...}) = 0
+#Mar 29 20:11:55 3900x strace[22134]: openat(AT_FDCWD, "/root/prometheus.yml", O_RDONLY|O_CLOEXEC) = -1 EACCES (Permission denied)
+#Mar 29 20:11:55 3900x strace[22134]: write(2, "ts=2024-03-30T03:11:55.068Z call"..., 200
+#Mar 29 20:11:55 3900x strace[22141]: ts=2024-03-30T03:11:55.068Z caller=main.go:521 level=error msg="Error loading config (--config.file=/root/prometheus.yml)" file=/root/prometheus.yml err="open /root/prometheus.yml: permission denied"
+#Mar 29 20:11:55 3900x strace[22134]: ) = 200
+#Mar 29 20:11:55 3900x strace[22134]: exit_group(2)                           = ?
+#Mar 29 20:11:55 3900x strace[22134]: +++ exited with 2 +++
+#Mar 29 20:11:55 3900x systemd[1]: prometheus.service: Main process exited, code=exited, status=2/INVALIDARGUMENT
+#Mar 29 20:11:55 3900x systemd[1]: prometheus.service: Failed with result 'exit-code'.
+#Mar 29 20:11:55 3900x systemd[1]: prometheus.service: Scheduled restart job, restart counter is at 1.
+#Mar 29 20:11:55 3900x systemd[1]: Started Prometheus service.
+
+#ExecStart=strace /usr/bin/prometheus --config.file=/root/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/home/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/home/wink/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/root/reth-prometheus-grafana/prometheus/prometheus.yml
+
+# This is the initial ExecStart tried, but it has the permission denied error:
+#ExecStart= \
+#  /usr/bin/prometheus \
+#  --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml \
+#  --storage.tsdb.path=/home/wink/reth-prometheus-grafana/prometheus/data $PROMETHEUS_ARGS \
+
+ExecReload=/bin/kill -HUP $MAINPID
+LimitNOFILE=65535
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=full
+ProtectHostname=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+LockPersonality=true
+RestrictRealtime=yes
+RestrictNamespaces=yes
+MemoryDenyWriteExecute=yes
+PrivateDevices=yes
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
