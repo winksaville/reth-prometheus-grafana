@@ -14,7 +14,8 @@ Group=users
 #User=prometheus
 #Group=prometheus
 
-Restart=on-failure
+#Restart=on-failure
+Restart=no
 WorkingDirectory=/usr/share/prometheus
 EnvironmentFile=-/etc/conf.d/prometheus
 
@@ -71,7 +72,7 @@ EnvironmentFile=-/etc/conf.d/prometheus
 #Mar 29 20:11:55 3900x systemd[1]: prometheus.service: Scheduled restart job, restart counter is at 1.
 #Mar 29 20:11:55 3900x systemd[1]: Started Prometheus service.
 
-#ExecStart=strace /usr/bin/prometheus --config.file=/root/prometheus.yml
+ExecStart=strace /usr/bin/prometheus --config.file=/root/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/wink/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml
