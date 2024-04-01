@@ -7,10 +7,10 @@ After=network-online.target
 # All of these User/Group work for the "(ok)" ExecStart lines
 #User=prometheus
 #Group=root
-#User=wink
-#Group=users
-User=prometheus
+User=wink
 Group=users
+#User=prometheus
+#Group=users
 #User=prometheus
 #Group=prometheus
 
@@ -72,22 +72,22 @@ EnvironmentFile=-/etc/conf.d/prometheus
 #Mar 29 20:11:55 3900x systemd[1]: prometheus.service: Scheduled restart job, restart counter is at 1.
 #Mar 29 20:11:55 3900x systemd[1]: Started Prometheus service.
 
-ExecStart=strace /usr/bin/prometheus --config.file=/root/prometheus.yml
+#ExecStart=/usr/bin/prometheus --config.file=/root/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/wink/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml
 #ExecStart=/usr/bin/prometheus --config.file=/root/reth-prometheus-grafana/prometheus/prometheus.yml
 
-# This is the initial ExecStart tried, but it has the permission denied error:
-#ExecStart= \
-#  /usr/bin/prometheus \
-#  --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml \
-#  --storage.tsdb.path=/home/wink/reth-prometheus-grafana/prometheus/data $PROMETHEUS_ARGS \
+# Start prometheus.service now works with user=wink, group=users and ProtectHome=false
+ExecStart= \
+  /usr/bin/prometheus \
+  --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml \
+  --storage.tsdb.path=/home/wink/reth-prometheus-grafana/prometheus/data $PROMETHEUS_ARGS \
 
 ExecReload=/bin/kill -HUP $MAINPID
 LimitNOFILE=65535
 NoNewPrivileges=true
-ProtectHome=true
+ProtectHome=false
 ProtectSystem=full
 ProtectHostname=true
 ProtectControlGroups=true
