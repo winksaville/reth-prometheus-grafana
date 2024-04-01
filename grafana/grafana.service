@@ -3,16 +3,17 @@ Description=Grafana service
 After=network.target postgresql.service mariadb.service mysqld.service
 
 [Service]
-User=grafana
-Group=grafana
+User=wink
+Group=users
 WorkingDirectory=/usr/share/grafana
-ExecStart=/usr/bin/grafana-server --config=/etc/grafana.ini
+#ExecStart=strace /usr/bin/grafana server --config=/home/wink/reth-prometheus-grafana/grafana/grafana.ini
+ExecStart=/usr/bin/grafana server --config=/home/wink/reth-prometheus-grafana/grafana/grafana.ini
 LimitNOFILE=10000
 TimeoutStopSec=20
 SuccessExitStatus=0 2
 NoNewPrivileges=yes
 ProtectSystem=full
-ProtectHome=true
+ProtectHome=false
 PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true
