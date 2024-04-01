@@ -4,23 +4,16 @@ Requires=network-online.target
 After=network-online.target
 
 [Service]
-User=wink
-Group=users
-
+User=prometheus
+Group=prometheus
 Restart=on-failure
 WorkingDirectory=/usr/share/prometheus
 EnvironmentFile=-/etc/conf.d/prometheus
-
-# Start prometheus.service. This now works with user=wink, group=users and ProtectHome=false
-ExecStart= \
-  /usr/bin/prometheus \
-  --config.file=/home/wink/reth-prometheus-grafana/prometheus/prometheus.yml \
-  --storage.tsdb.path=/home/wink/reth-prometheus-grafana/prometheus/data $PROMETHEUS_ARGS \
-
+ExecStart=/usr/bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus/data $PROMETHEUS_ARGS
 ExecReload=/bin/kill -HUP $MAINPID
 LimitNOFILE=65535
 NoNewPrivileges=true
-ProtectHome=false
+ProtectHome=true
 ProtectSystem=full
 ProtectHostname=true
 ProtectControlGroups=true
@@ -35,3 +28,4 @@ CapabilityBoundingSet=
 
 [Install]
 WantedBy=multi-user.target
+
